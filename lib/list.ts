@@ -1,114 +1,79 @@
 import type { CatalogPlugin, ListContext, Folder } from '@data-fair/types-catalogs'
-import type { MockConfig } from '#types'
-import type { MockCapabilities } from './capabilities.ts'
+import type { UDataConfig } from '#types'
+import type { CkanCapabilities } from './capabilities.ts'
+import axios from '@data-fair/lib-node/axios.js'
 
-// Generate a random recent ISO date (within the last year)
-const randomRecentIso = () => {
-  const ms = Math.floor(Math.random() * 364 * 24 * 60 * 60 * 1000)
-  return new Date(Date.now() - ms).toISOString()
-}
+export const list = async ({ catalogConfig, secrets, params }: ListContext<UDataConfig, CkanCapabilities>): ReturnType<CatalogPlugin['list']> => {
+  if (params.action && !secrets.apiKey) throw new Error('API key is required to list datasets for publication')
 
-export const list = async ({ catalogConfig, secrets, params }: ListContext<MockConfig, MockCapabilities>): ReturnType<CatalogPlugin['list']> => {
-  await new Promise(resolve => setTimeout(resolve, catalogConfig.delay)) // Simulate a delay for the mock plugin
+  const axiosOptions: Record<string, any> = { headers: {}, params: {} }
+  if (secrets.apiKey) axiosOptions.headers['X-API-KEY'] = secrets.apiKey
+  if (params.q) axiosOptions.params.q = params.q
 
-  const tree = (await import('./resources/resources-mock.ts')).default
-
-  /**
-   * Extracts folders and resources for a given parent/folder ID
-   * @param resources - The resources object containing folders and resources
-   * @param targetId - The parent ID for folders or folder ID for resources (undefined for root level)
-   * @returns Array of folders and resources matching the criteria
-   */
-  const getFoldersAndResources = (targetId: string | undefined) => {
-    const folders = Object.keys(tree.folders).reduce((acc: Folder[], key) => {
-      if (tree.folders[key].parentId !== targetId) return acc // Skip folders that are not under the targetId
-      acc.push({
-        id: key,
-        title: tree.folders[key].title,
-        type: 'folder',
-        updatedAt: randomRecentIso()
-      })
-      return acc
-    }, [])
-
-    // In the mock plugin, we assume that resources are always under a folder
-    if (!targetId) return folders
-
-    const resources = tree.folders[targetId]?.resourceIds.reduce((acc: Awaited<ReturnType<CatalogPlugin['list']>>['results'], resourceId) => {
-      const resource = tree.resources[resourceId]
-      if (!resource) return acc // Skip if resource not found
-
-      acc.push({
-        id: resourceId,
-        title: resource.title,
-        description: resource.description + '\n\n' + secrets.secretField, // Include the secret in the description for demonstration
-        format: resource.format,
-        mimeType: resource.mimeType,
-        origin: resource.origin,
-        size: resource.size,
-        updatedAt: resource.updatedAt,
-        type: 'resource'
-      })
-      return acc
-    }, [])
-
-    return [...folders, ...resources]
-  }
-
-  const path: Folder[] = []
-  let res = getFoldersAndResources(params.currentFolderId)
-  // Get total count before search and pagination
-  const totalCount = res.length
-
-  // Apply search filter if provided
-  if (params.q && catalogConfig.searchCapability) {
-    const searchTerm = params.q.toLowerCase()
-    res = res.filter(item =>
-      item.title.toLowerCase().includes(searchTerm) ||
-      ('description' in item && item.description?.toLowerCase().includes(searchTerm))
-    )
-  }
-
-  if (catalogConfig.paginationCapability && params.page && params.size) {
-    // Apply pagination
-    const size = params.size || 20
-    const page = params.page || 0
-    const skip = (page - 1) * size
-    res = res.slice(skip, skip + size)
-  }
-
-  // Get path to current folder if specified
   if (params.currentFolderId) {
-    // Get current folder
-    const currentFolder = tree.folders[params.currentFolderId]
-    if (!currentFolder) throw new Error(`Folder with ID ${params.currentFolderId} not found`)
+    const dataset = (await axios.get(new URL(`api/action/package_show?id=${params.currentFolderId}`, catalogConfig.url).href, axiosOptions)).data.result
 
-    // Get path to current folder (parents folders)
-    let parentId = currentFolder.parentId
-    while (parentId) {
-      const parentFolder = tree.folders[parentId]
-      if (!parentFolder) throw new Error(`Parent folder with ID ${parentId} not found`)
+    type ResourceResponse = Awaited<ReturnType<CatalogPlugin['list']>>['results'][number]
 
-      // Add the parent to the start of the list to avoid reversing the path later
-      path.unshift({
-        id: parentId,
-        title: parentFolder.title,
-        type: 'folder'
-      })
-      parentId = parentFolder.parentId
+    // Convert the dataset resources to ResourceList format
+    const resources = (dataset.resources || []).map(
+      (ckanResource: any) =>
+        ({
+          id: `${dataset.id}:${ckanResource.id}`,
+          title: ckanResource.name,
+          type: 'resource',
+          description: ckanResource.description,
+          format: ckanResource.format || 'unknown',
+          origin: 0,
+          mimeType: ckanResource.mimetype,
+          size: ckanResource.size,
+          updatedAt: ckanResource.metadata_modified,
+        }) as unknown as ResourceResponse
+    )
+
+    // Build the path with the dataset folder
+    const path: Folder[] = [
+      {
+        id: dataset.id,
+        title: dataset.name,
+        type: 'folder',
+        updatedAt: dataset.metadata_modified,
+      },
+    ]
+
+    return {
+      count: resources.length,
+      results: resources,
+      path,
     }
-
-    // Add the current folder to the path
-    path.push({
-      id: params.currentFolderId,
-      title: currentFolder.title,
-      type: 'folder'
-    })
   }
+
+  let datasets
+  let count
+
+  datasets = (await axios.get(new URL('api/action/current_package_list_with_resources', catalogConfig.url).href, axiosOptions)).data.result
+  // eslint-disable-next-line prefer-const
+  count = datasets.length // Count before pagination
+  if (params.size && params.page) {
+    const startIndex = (params.page - 1) * params.size
+    const endIndex = startIndex + Number(params.size)
+    datasets = datasets.slice(startIndex, endIndex)
+  }
+
+  // Convert datasets to folders
+  const folders = datasets.map(
+    (dataset: any) =>
+      ({
+        id: dataset.id,
+        title: dataset.title,
+        type: 'folder',
+        updatedAt: dataset.metadata_modified,
+      }) as unknown as Folder[]
+  )
 
   return {
-    count: totalCount,
-    results: res,
-    path
+    count,
+    results: folders,
+    path: [], // Empty path for root level
   }
 }

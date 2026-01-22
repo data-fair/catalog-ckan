@@ -1,66 +1,61 @@
 import type { PrepareContext } from '@data-fair/types-catalogs'
-import type { MockCapabilities } from './capabilities.ts'
-import type { MockConfig } from '#types'
+import type { CkanCapabilities } from './capabilities.ts'
+import type { UDataConfig } from '#types'
 
-export default async ({ catalogConfig, capabilities, secrets }: PrepareContext<MockConfig, MockCapabilities>) => {
+import axios from '@data-fair/lib-node/axios.js'
+
+export default async ({ catalogConfig, capabilities, secrets }: PrepareContext<UDataConfig, CkanCapabilities>) => {
   // Manage secrets
-  const secretField = catalogConfig.secretField
+  const apiKey = catalogConfig.apiKey
   // If the config contains a secretField, and it is not already hidden
-  if (secretField && secretField !== '********') {
+  if (apiKey && apiKey !== '**************************************************') {
     // Hide the secret in the catalogConfig, and copy it to secrets
-    secrets.secretField = secretField
-    catalogConfig.secretField = '********'
+    secrets.apiKey = apiKey
+    catalogConfig.apiKey = '**************************************************'
 
-  // If the secretField is in the secrets, and empty in catalogConfig,
-  // then it means the user has cleared the secret in the config
-  } else if (secrets?.secretField && secretField === '') {
-    delete secrets.secretField
-  } else {
-    // The secret is already set, do nothing
+    // If the secretField is in the secrets, and empty in catalogConfig,
+    // then it means the user has cleared the secret in the config
+  } else if (secrets?.apiKey && apiKey === '') {
+    delete secrets.apiKey
   }
 
   // Manage capabilities
-  if (catalogConfig.searchCapability && !capabilities.includes('search')) capabilities.push('search')
-  else capabilities = capabilities.filter(c => c !== 'search')
-
-  if (catalogConfig.paginationCapability && !capabilities.includes('pagination')) capabilities.push('pagination')
-  else capabilities = capabilities.filter(c => c !== 'pagination')
-
-  // Manage publication capabilities based on publicationMode
-  const publicationCapabilities: typeof capabilities[number][] = [
-    'createFolderInRoot',
-    'createFolder',
-    'createResource',
-    'replaceFolder',
-    'replaceResource'
-  ]
-
-  // Remove all publication capabilities first (including requiresPublicationSite)
-  capabilities = capabilities.filter(c => !publicationCapabilities.includes(c) && c !== 'requiresPublicationSite' && c !== 'publication' as any)
-
-  // Add capabilities based on publicationMode
-  if (catalogConfig.publicationMode === 'simple') {
-    capabilities.push('createFolderInRoot')
-  } else if (catalogConfig.publicationMode === 'full') {
-    capabilities.push(...publicationCapabilities)
-  } else if (catalogConfig.publicationMode === 'withSite') {
-    capabilities.push(...publicationCapabilities)
-    capabilities.push('requiresPublicationSite')
+  const publicationCapabilities = ['createFolderInRoot', 'createResource', 'replaceFolder', 'replaceResource'] as const
+  if (secrets?.apiKey) {
+    for (const cap of publicationCapabilities) {
+      if (!capabilities.includes(cap)) capabilities.push(cap)
+    }
+  } else {
+    capabilities = capabilities.filter(c => !publicationCapabilities.includes(c as any))
   }
 
-  let thumbnailUrl: string
-  if (catalogConfig.thumbnailUrl) {
-    if (!capabilities.includes('thumbnailUrl')) capabilities.push('thumbnailUrl')
-    thumbnailUrl = catalogConfig.thumbnailUrl
-  } else {
-    capabilities = capabilities.filter(c => c !== 'thumbnailUrl')
-    thumbnailUrl = ''
+  // Compatibility: remove old 'publication' capability and add 'requiresPublicationSite'
+  capabilities = capabilities.filter(c => c !== 'publication' as any)
+  if (!capabilities.includes('requiresPublicationSite')) capabilities.push('requiresPublicationSite')
+
+  // Check if the APIkey is valid by getting the user info
+  if (secrets?.apiKey) {
+    let user
+    try {
+      user = (await axios.get(`${catalogConfig.url}/api/1/me`, {
+        headers: {
+          Authorization: secrets.apiKey
+        }
+      })).data
+    } catch (error: any) {
+      if (error.status === 401) throw new Error('Invalid API key')
+      throw new Error(`UData validation failed: ${error.message || 'Unknown error'}`)
+    }
+
+    // If they are an organization, check if the user has the right on this organization
+    if (catalogConfig.organization?.id && !user.organizations.some((org: any) => org.id === catalogConfig.organization!.id)) {
+      throw new Error(`User does not have access to organization ${catalogConfig.organization.name}`)
+    }
   }
 
   return {
     catalogConfig,
     capabilities,
-    secrets,
-    thumbnailUrl
+    secrets
   }
 }

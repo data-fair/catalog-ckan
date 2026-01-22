@@ -1,13 +1,10 @@
 import type CatalogPlugin from '@data-fair/types-catalogs'
-import { importConfigSchema, configSchema, assertConfigValid, type MockConfig } from '#types'
-import { type MockCapabilities, capabilities } from './lib/capabilities.ts'
+import { importConfigSchema, configSchema, assertConfigValid, type UDataConfig } from '#types'
+import { type CkanCapabilities, capabilities } from './lib/capabilities.ts'
+import importFiltersSchema from './lib/importFiltersSchema.ts'
 import i18n from './lib/i18n.ts'
 
-// Since the plugin is very frequently imported, each function is imported on demand,
-// instead of loading the entire plugin.
-// This file should not contain any code, but only constants and dynamic imports of functions.
-
-const plugin: CatalogPlugin<MockConfig, MockCapabilities> = {
+const plugin: CatalogPlugin<UDataConfig, CkanCapabilities> = {
   async prepare (context) {
     const prepare = (await import('./lib/prepare.ts')).default
     return prepare(context)
@@ -34,13 +31,14 @@ const plugin: CatalogPlugin<MockConfig, MockCapabilities> = {
   },
 
   metadata: {
-    title: 'Mock',
-    thumbnailPath: './lib/resources/thumbnail.svg',
+    title: 'Udata',
+    description: 'Importez / publiez des jeux de données depuis / vers un catalogue Udata. (ex. : data.gouv.fr)',
     i18n,
     capabilities
   },
 
   importConfigSchema,
+  importFiltersSchema,
   configSchema,
   assertConfigValid
 }
