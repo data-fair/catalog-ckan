@@ -1,16 +1,15 @@
 {
-  "$id": "https://github.com/data-fair/catalog-mock/catalog-config",
+  "$id": "https://github.com/data-fair/catalog-udata/config",
   "x-exports": [
     "types",
     "validate",
     "schema"
   ],
-  "title": "MockConfig",
+  "title": "UDataConfig",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "url",
-    "delay"
+    "url"
   ],
   "properties": {
     "url": {
@@ -18,24 +17,26 @@
       "title": "URL",
       "description": "The url of the catalog",
       "x-i18n-description": {
-        "fr": "L'URL de l'API du catalogue"
+        "fr": "L'URL du catalogue"
       },
       "pattern": "^https?://.*[^/]$",
       "errorMessage": "The URL must start with http:// or https:// and must not end with `/`.",
       "x-i18n-errorMessage": {
         "fr": "L'URL doit commencer par http:// ou https:// et ne pas se terminer par `/`."
       },
-      "examples": ["https://example.com"]
+      "examples": [
+        "https://demo.ckan.org"
+      ]
     },
-    "secretField": {
+    "apiKey": {
       "type": "string",
-      "title": "Secret Field",
+      "title": "API Key",
       "x-i18n-title": {
-        "fr": "Champ chiffré"
+        "fr": "Clé API"
       },
-      "description": "A secret field that is ciphered but for testing purposes, shown in the description of imported datasets.",
+      "description": "This key is to be configured on your profile in the remote catalog. Example link to your data.gouv.fr profile: https://data.gouv.fr/admin/me/profile",
       "x-i18n-description": {
-        "fr": "Un champ secret qui est chiffré mais qui, à des fins de test, est affiché dans la description des jeux de données importés."
+        "fr": "Cette clé est à configurer sur votre profil du catalogue distant. Example de lien vers votre profil data.gouv.fr : https://data.gouv.fr/admin/me/profile"
       },
       "layout": {
         "props": {
@@ -44,124 +45,65 @@
         }
       }
     },
-    "thumbnailUrl": {
-      "type": "string",
-      "title": "Thumbnail URL",
+    "organization": {
+      "type": "object",
+      "title": "Organization for publication",
       "x-i18n-title": {
-        "fr": "URL de la vignette"
+        "fr": "Organisation de publication"
       },
-      "description": "The URL of the thumbnail image for the catalog. If not provided, no thumbnail will be displayed.",
+      "description": "Leave empty to publish on a personal account. Otherwise, use an organization where you have write permissions.",
       "x-i18n-description": {
-        "fr": "L'URL de l'image miniature du catalogue. Si non fourni, aucune vignette ne sera affichée."
+        "fr": "Laissez vide pour publier sur un compte personnel. Sinon utilisez une organisation dans laquelle vous avez le droit d'écriture."
       },
-      "pattern": "^https?://.*[^/]$",
-      "errorMessage": "The Thumbnail URL must start with http:// or https:// and must not end with `/`.",
-      "x-i18n-errorMessage": {
-        "fr": "L'URL de la vignette doit commencer par http:// ou https:// et ne pas se terminer par `/`."
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "image_url": {
+          "type": "string"
+        }
       },
-      "examples": ["https://cdn.jsdelivr.net/gh/data-fair/data-fair@master/ui/public/assets/logo.svg"],
       "layout": {
+        "getItems": {
+          "url": "${parent.data.url}/api/1/organizations/suggest/",
+          "itemsResults": "data",
+          "itemTitle": "item.name",
+          "itemIcon": "item.image_url",
+          "itemKey": "item.id",
+          "qSearchParam": "q"
+        },
         "props": {
-          "clearable": true
-        }
-      }
-    },
-    "delay": {
-      "type": "number",
-      "title": "Response Delay",
-      "x-i18n-title": {
-        "fr": "Délai de réponse"
-      },
-      "description": "Adds a response delay (in ms) to requests to simulate server response time. Set to 0 to disable.",
-      "x-i18n-description": {
-        "fr": "Ajoute un temps de réponse (en ms) aux requêtes pour simuler un délai de réponse du serveur. La valeur 0 désactive le délai."
-      },
-      "default": 500,
-      "minimum": 0,
-      "maximum": 60000,
-      "layout": {
-        "cols": 4,
-        "props": {
-          "step": 100
-        }
-      }
-    },
-    "searchCapability": {
-      "type": "boolean",
-      "title": "Search Capability",
-      "x-i18n-title": {
-        "fr": "Capacité de recherche"
-      },
-      "description": "Indicates whether the catalog dynamically supports the search feature.",
-      "x-i18n-description": {
-        "fr": "Indique si le catalogue prend en charge dynamiquement la fonctionnalité de recherche."
-      },
-      "default": true,
-      "layout": {
-        "comp": "switch",
-        "cols": 4
-      }
-    },
-    "paginationCapability": {
-      "type": "boolean",
-      "title": "Pagination Capability",
-      "x-i18n-title": {
-        "fr": "Capacité de pagination"
-      },
-      "description": "Indicates whether the catalog dynamically supports pagination.",
-      "x-i18n-description": {
-        "fr": "Indique si le catalogue prend en charge dynamiquement la pagination."
-      },
-      "default": true,
-      "layout": {
-        "comp": "switch",
-        "cols": 4
-      }
-    },
-    "publicationMode": {
-      "type": "string",
-      "title": "Publication Mode",
-      "x-i18n-title": {
-        "fr": "Mode de publication"
-      },
-      "description": "Select the publication mode to test different scenarios: 'none' for no publication capabilities, 'simple' for basic publication (one capability), 'full' for all publication capabilities, or 'withSite' for all capabilities including requiresPublicationSite.",
-      "x-i18n-description": {
-        "fr": "Sélectionnez le mode de publication pour tester différents scénarios : 'none' pour aucune capacité de publication, 'simple' pour une publication basique (une seule capacité), 'full' pour toutes les capacités de publication, ou 'withSite' pour toutes les capacités y compris requiresPublicationSite."
-      },
-      "default": "full",
-      "layout": {
-        "cols": 6
-      },
-      "oneOf": [
-        {
-          "const": "none",
-          "title": "No publication",
-          "x-i18n-title": {
-            "fr": "Aucune publication"
-          }
-        },
-        {
-          "const": "simple",
-          "title": "Simple (createFolderInRoot only)",
-          "x-i18n-title": {
-            "fr": "Simple (createFolderInRoot uniquement)"
-          }
-        },
-        {
-          "const": "full",
-          "title": "Full (all publication capabilities)",
-          "x-i18n-title": {
-            "fr": "Complet (toutes les capacités de publication)"
-          }
-        },
-        {
-          "const": "withSite",
-          "title": "With publication site (requiresPublicationSite)",
-          "x-i18n-title": {
-            "fr": "Avec site de publication (requiresPublicationSite)"
+          "placeholder": "Search...",
+          "x-i18n-placeholder": {
+            "fr": "Rechercher..."
           }
         }
+      }
+    }
+  },
+  "layout": [
+    {
+      "children": [
+        "url",
+        "apiKey"
+      ]
+    },
+    {
+      "title": "Publication settings",
+      "x-i18n-title": {
+        "fr": "Paramètres de publication"
+      },
+      "if": "parent.data.apiKey",
+      "children": [
+        "organization"
       ]
     }
-  }
+  ]
 }
