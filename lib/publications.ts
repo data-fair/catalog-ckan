@@ -1,16 +1,16 @@
 import type { CatalogPlugin, Publication, PublishDatasetContext, DeletePublicationContext } from '@data-fair/types-catalogs'
-import type { UDataConfig } from '#types'
+import type { CkanConfig } from '#types'
 
 import axios from '@data-fair/lib-node/axios.js'
 import { microTemplate } from '@data-fair/lib-utils/micro-template.js'
 
-export const publishDataset = async (context: PublishDatasetContext<UDataConfig>): ReturnType<CatalogPlugin['publishDataset']> => {
+export const publishDataset = async (context: PublishDatasetContext<CkanConfig>): ReturnType<CatalogPlugin['publishDataset']> => {
   if (!context.secrets.apiKey) throw new Error('API key is required to publish a dataset')
-  if (['createResource', 'replaceResource'].includes(context.publication.action)) return await createOrUpdateDataset(context)
+  if (['createResource', 'replaceResource'].includes(context.publication.action)) return await createOrUpdateResource(context)
   else return await createOrUpdateDataset(context)
 }
 
-const createOrUpdateDataset = async ({ catalogConfig, secrets, dataset, publication, publicationSite, log }: PublishDatasetContext<UDataConfig>): Promise<Publication> => {
+const createOrUpdateDataset = async ({ catalogConfig, secrets, dataset, publication, publicationSite, log }: PublishDatasetContext<CkanConfig>): Promise<Publication> => {
   await log.step('Preparing the dataset for publication/update on UData')
   const axiosOptions = { headers: { Authorization: secrets.apiKey } }
 
@@ -255,13 +255,13 @@ const createOrUpdateDataset = async ({ catalogConfig, secrets, dataset, publicat
   return publication
 }
 
-export const deletePublication = async (context: DeletePublicationContext<UDataConfig>): ReturnType<CatalogPlugin['deletePublication']> => {
+export const deletePublication = async (context: DeletePublicationContext<CkanConfig>): ReturnType<CatalogPlugin['deletePublication']> => {
   if (!context.secrets.apiKey) throw new Error('API key is required to delete a publication')
   if (context.resourceId) return await deleteResource(context)
   else await deleteDataset(context)
 }
 
-const deleteDataset = async ({ catalogConfig, secrets, folderId, log }: DeletePublicationContext<UDataConfig>): Promise<void> => {
+const deleteDataset = async ({ catalogConfig, secrets, folderId, log }: DeletePublicationContext<CkanConfig>): Promise<void> => {
   try {
     await log.step(`Deleting dataset ${folderId}`)
     await axios.post(new URL('api/3/action/package_delete', catalogConfig.url).href, { id: folderId }, { headers: { Authorization: secrets.apiKey } })
@@ -273,7 +273,7 @@ const deleteDataset = async ({ catalogConfig, secrets, folderId, log }: DeletePu
   }
 }
 
-const deleteResource = async ({ catalogConfig, secrets, folderId, resourceId, log }: DeletePublicationContext<UDataConfig>): Promise<void> => {
+const deleteResource = async ({ catalogConfig, secrets, folderId, resourceId, log }: DeletePublicationContext<CkanConfig>): Promise<void> => {
   try {
     if (!resourceId) {
       throw new Error('Resource ID is required for deletion')
@@ -304,4 +304,74 @@ const deleteResource = async ({ catalogConfig, secrets, folderId, resourceId, lo
     if (![404, 410].includes(e.status)) throw new Error(`Error deleting resource on ${catalogConfig.url}: ${e.message}`)
     await log.warning(`Resource ${resourceId} doesn't exist or has already been deleted (code ${e.status})`)
   }
+}
+
+const createOrUpdateResource = async ({ catalogConfig, secrets, dataset, publication, publicationSite, log }: PublishDatasetContext<CkanConfig>): Promise<Publication> => {
+  await log.step('Preparing the resource for publication on UData')
+
+  const axiosOptions = { headers: { Authorization: secrets.apiKey } }
+
+  let datasetId: string | undefined
+  let resourceId: string | undefined
+
+  if (publication.remoteFolder) datasetId = publication.remoteFolder.id
+  if (publication.remoteResource?.id) {
+    const parts = publication.remoteResource.id.split(':')
+    if (parts.length !== 2) {
+      throw new Error(`Invalid resource ID: ${publication.remoteResource.id}. Expected: "datasetId:resourceId"`)
+    }
+    datasetId = parts[0]
+    resourceId = parts[1]
+  }
+  if (!datasetId) throw new Error('Dataset ID is required to create or update a resource')
+
+  await log.info(`Retrieving remote dataset ${datasetId}`)
+  const udataDataset = (await axios.get(new URL('api/3/action/package_show?id=' + datasetId, catalogConfig.url).href, axiosOptions)).data.result
+  if (!udataDataset) throw new Error('Remote dataset not found')
+  if (udataDataset.deleted) throw new Error('Remote dataset deleted')
+
+  await log.info(`Building resource for dataset ${dataset.title}`)
+  const title = `${dataset.title} - Consultez les données`
+  const description = `Consultez directement les données dans ${dataset.bbox ? 'une carte interactive' : 'un tableau'}.`
+  const url = microTemplate(publicationSite.datasetUrlTemplate || '', { id: dataset.id, slug: dataset.slug })
+
+  const existingUdataResource = udataDataset.resources.find((r: { id: string }) => r.id === resourceId)
+  if (resourceId && existingUdataResource) { // Update it
+    await log.step(`Updating existing resource ${resourceId}`)
+    existingUdataResource.title = title
+    existingUdataResource.description = description
+    existingUdataResource.url = url
+    const res = await axios.post(new URL('api/3/action/package_show/resource_patch', catalogConfig.url).href, existingUdataResource, axiosOptions)
+
+    publication.remoteResource = {
+      id: `${datasetId}:${existingUdataResource.id}`,
+      title: res.data.title,
+      url: udataDataset.page
+    }
+    await log.info(`Resource ${resourceId} updated successfully`)
+  } else { // Add it
+    await log.step('Creating a new resource')
+    const resource = {
+      package_id: dataset.id,
+      name: title,
+      description,
+      url,
+      resource_type: 'remote',
+      format: 'Page Web',
+      mimetype: 'text/html'
+    }
+
+    await log.info(`Adding resource to dataset ${udataDataset.title || datasetId}`)
+    const res = await axios.post(new URL('api/3/action/resource_create', catalogConfig.url).href, resource, axiosOptions)
+
+    publication.remoteResource = {
+      id: `${datasetId}:${res.data.result.id}`,
+      title: res.data.result.title,
+      url: udataDataset.page
+    }
+    await log.info(`Resource created with ID: ${res.data.id} in dataset ${datasetId}`)
+  }
+
+  await log.info('Resource publication completed successfully')
+  return publication
 }

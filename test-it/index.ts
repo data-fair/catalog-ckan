@@ -1,4 +1,5 @@
 import type CatalogPlugin from '@data-fair/types-catalogs'
+import type { Publication } from '@data-fair/types-catalogs'
 import { strict as assert } from 'node:assert'
 import { it, describe, before, beforeEach } from 'node:test'
 import fs from 'fs-extra'
@@ -27,7 +28,7 @@ const secrets = {
   })()
 }
 
-describe('catalog-udata', () => {
+describe('catalog-ckan', () => {
   it('should list datasets as folders from root', async () => {
     const res = await catalogPlugin.list({
       catalogConfig,
@@ -250,6 +251,89 @@ describe('catalog-udata', () => {
       assert.ok(!remoteDataset.spatial || remoteDataset.spatial.zones.length === 0, 'Should have no spatial zones for unmappable text')
 
       // Clean up
+      await catalogPlugin.deletePublication({
+        catalogConfig,
+        secrets,
+        folderId: result.remoteFolder.id,
+        log: logFunctions
+      })
+    })
+  })
+
+  describe('Resource', () => {
+    let datasetId: string
+    let result: Publication
+    const publicationSite = {
+      title: 'Test Site',
+      url: 'http://192.168.1.16',
+      datasetUrlTemplate: 'http://192.168.1.16/data-fair/{id}'
+    }
+    it('Dataset Resource', async () => {
+      const dataset = {
+        id: 'test-3',
+        title: 'Test 3',
+        description: 'Test dataset',
+        slug: 'test-3',
+        public: false,
+        spatial: 'France métropolitaine, sans la Corse ni les iles du Ponant'
+      }
+      const publication = {
+        action: 'createFolderInRoot' as const
+      }
+
+      result = await catalogPlugin.publishDataset({
+        catalogConfig,
+        secrets,
+        dataset,
+        publication,
+        publicationSite,
+        log: logFunctions
+      })
+
+      assert.ok(result.remoteFolder?.id, 'Publication should have a remote folder ID')
+
+      // Verify spatial coverage on the remote dataset
+      const response = await axios.get(
+        new URL(`api/3/action/package_show?id=${result.remoteFolder.id}`, catalogConfig.url).href,
+        { headers: { Authorization: secrets.apiKey } }
+      )
+      const remoteDataset = response.data
+
+      // This query is too complex and should not be mapped to any zone
+      assert.ok(!remoteDataset.spatial || remoteDataset.spatial.zones.length === 0, 'Should have no spatial zones for unmappable text')
+
+      datasetId = result.remoteFolder.id
+    })
+
+    it('Resource', async () => {
+      const publication = result
+      publication.action = 'createResource' as const
+
+      const dataset = {
+        id: datasetId,
+        title: 'Resource de testt',
+        slug: 'test-3'
+      }
+
+      result = await catalogPlugin.publishDataset({
+        catalogConfig,
+        secrets,
+        dataset,
+        publication,
+        publicationSite,
+        log: logFunctions
+      })
+
+      assert.ok(result.remoteFolder?.id, 'Publication should have a remote resource ID')
+      assert.ok(result.remoteResource?.id, 'Publication should have a remote resource ID')
+
+      await catalogPlugin.deletePublication({
+        catalogConfig,
+        secrets,
+        resourceId: result.remoteResource.id,
+        log: logFunctions
+      })
+
       await catalogPlugin.deletePublication({
         catalogConfig,
         secrets,

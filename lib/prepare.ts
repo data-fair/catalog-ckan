@@ -1,10 +1,10 @@
 import type { PrepareContext } from '@data-fair/types-catalogs'
 import type { CkanCapabilities } from './capabilities.ts'
-import type { UDataConfig } from '#types'
+import type { CkanConfig } from '#types'
 
 import axios from '@data-fair/lib-node/axios.js'
 
-export default async ({ catalogConfig, capabilities, secrets }: PrepareContext<UDataConfig, CkanCapabilities>) => {
+export default async ({ catalogConfig, capabilities, secrets }: PrepareContext<CkanConfig, CkanCapabilities>) => {
   // Manage secrets
   const apiKey = catalogConfig.apiKey
   // If the config contains a secretField, and it is not already hidden
