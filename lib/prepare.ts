@@ -37,14 +37,14 @@ export default async ({ catalogConfig, capabilities, secrets }: PrepareContext<C
   if (secrets?.apiKey) {
     let user
     try {
-      user = (await axios.get(`${catalogConfig.url}/api/1/me`, {
+      user = (await axios.get(`${catalogConfig.url}/api/3/action/user_show`, {
         headers: {
           Authorization: secrets.apiKey
         }
       })).data
     } catch (error: any) {
       if (error.status === 401) throw new Error('Invalid API key')
-      throw new Error(`UData validation failed: ${error.message || 'Unknown error'}`)
+      throw new Error(`Ckan validation failed: ${error.message || 'Unknown error'}`)
     }
 
     // If they are an organization, check if the user has the right on this organization

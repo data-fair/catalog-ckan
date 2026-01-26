@@ -5,7 +5,7 @@
     "validate",
     "schema"
   ],
-  "title": "UDataConfig",
+  "title": "CkanConfig",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -72,10 +72,9 @@
       },
       "layout": {
         "getItems": {
-          "url": "${parent.data.url}/api/1/organizations/suggest/",
-          "itemsResults": "data",
-          "itemTitle": "item.name",
-          "itemIcon": "item.image_url",
+          "url": "${parent.data.url}/api/3/action/organization_autocomplete?",
+          "itemsResults": "data.result",
+          "itemTitle": "item.title",
           "itemKey": "item.id",
           "qSearchParam": "q"
         },

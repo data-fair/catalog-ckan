@@ -31,8 +31,8 @@ const plugin: CatalogPlugin<CkanConfig, CkanCapabilities> = {
   },
 
   metadata: {
-    title: 'Udata',
-    description: 'Importez / publiez des jeux de données depuis / vers un catalogue Udata. (ex. : data.gouv.fr)',
+    title: 'Ckan',
+    description: 'Importez / publiez des jeux de données depuis / vers un catalogue Ckan.',
     i18n,
     capabilities
   },

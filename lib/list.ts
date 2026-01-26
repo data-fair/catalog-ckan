@@ -7,7 +7,7 @@ export const list = async ({ catalogConfig, secrets, params }: ListContext<CkanC
   if (params.action && !secrets.apiKey) throw new Error('API key is required to list datasets for publication')
 
   const axiosOptions: Record<string, any> = { headers: {}, params: {} }
-  if (secrets.apiKey) axiosOptions.headers['X-API-KEY'] = secrets.apiKey
+  if (secrets.apiKey) axiosOptions.headers.Authorization = secrets.apiKey
   if (params.q) axiosOptions.params.q = params.q
 
   if (params.currentFolderId) {

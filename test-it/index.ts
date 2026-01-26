@@ -16,7 +16,7 @@ dotenv.config()
 
 /** Catalog configuration for testing purposes. */
 const catalogConfig = {
-  url: process.env.UDATA_URL || 'http://192.168.1.16',
+  url: process.env.CKAN_URL || 'http://192.168.1.16',
   apiKey: '**************************************************',
   organization: { id: 'orga-1' }
 }
@@ -24,7 +24,7 @@ const catalogConfig = {
 /** Secrets for accessing the catalog API, including the API key. */
 const secrets = {
   apiKey: process.env.CKAN_API_KEY || (() => {
-    throw new Error('UDATA_API_KEY environment variable is required for tests')
+    throw new Error('CKAN_API_KEY environment variable is required for tests')
   })()
 }
 
@@ -124,7 +124,7 @@ describe('catalog-ckan', () => {
         catalogConfig,
         secrets,
         resourceId,
-        importConfig: {}, // UData doesn't use importConfig
+        importConfig: {}, // Ckan doesn't use importConfig
         tmpDir,
         log: logFunctions,
         update: {

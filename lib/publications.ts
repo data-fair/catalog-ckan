@@ -11,7 +11,7 @@ export const publishDataset = async (context: PublishDatasetContext<CkanConfig>)
 }
 
 const createOrUpdateDataset = async ({ catalogConfig, secrets, dataset, publication, publicationSite, log }: PublishDatasetContext<CkanConfig>): Promise<Publication> => {
-  await log.step('Preparing the dataset for publication/update on UData')
+  await log.step('Preparing the dataset for publication/update on Ckan')
   const axiosOptions = { headers: { Authorization: secrets.apiKey } }
 
   const datasetUrl = microTemplate(publicationSite.datasetUrlTemplate || '', { id: dataset.id, slug: dataset.slug })
@@ -134,8 +134,8 @@ const createOrUpdateDataset = async ({ catalogConfig, secrets, dataset, publicat
     }
   }
 
-  await log.step('Building the UData dataset')
-  const udataDataset: Record<string, any> = {
+  await log.step('Building the Ckan dataset')
+  const ckanDataset: Record<string, any> = {
     name: trans(dataset.title),
     title: dataset.title,
     description: dataset.description || dataset.title, // Description field is required
@@ -152,31 +152,31 @@ const createOrUpdateDataset = async ({ catalogConfig, secrets, dataset, publicat
       },
     ],
   }
-  if (dataset.keywords && dataset.keywords.length) udataDataset.tags = dataset.keywords
+  if (dataset.keywords && dataset.keywords.length) ckanDataset.tags = dataset.keywords
   if (dataset.license) {
     await log.info(`Searching for corresponding license: ${dataset.license.href}`)
-    const udataLicenses = (await axios.get(new URL('api/3/action/license_list/', catalogConfig.url).href, axiosOptions)).data.result
-    const udataLicense = udataLicenses.find((l: { id: any; }) => l.id === dataset.license_id)
-    if (udataLicense) {
-      await log.info(`License found: ${udataLicense.title}`)
-      udataDataset.license_id = udataLicense.id
+    const ckanLicenses = (await axios.get(new URL('api/3/action/license_list/', catalogConfig.url).href, axiosOptions)).data.result
+    const ckanLicense = ckanLicenses.find((l: { id: any; }) => l.id === dataset.license_id)
+    if (ckanLicense) {
+      await log.info(`License found: ${ckanLicense.title}`)
+      ckanDataset.license_id = ckanLicense.id
     } else {
-      await log.warning(`License not found on UData: ${dataset.license.href}`)
+      await log.warning(`License not found on Ckan: ${dataset.license.href}`)
     }
   }
   if (catalogConfig.organization?.id) {
     await log.info(`Associating with organization: ${catalogConfig.organization.id}`)
-    udataDataset.owner_org = catalogConfig.organization.id
+    ckanDataset.owner_org = catalogConfig.organization.id
   }
 
   // Try to retrieve the remote dataset to update it
   if (publication.remoteFolder) {
     await log.step(`Updating existing remote dataset: ${publication.remoteFolder.id}`)
-    const existingUdataDataset = (await axios.get(new URL('api/3/action/package_show?id=' + publication.remoteFolder.id, catalogConfig.url).href, axiosOptions)).data.result
+    const existingCkanDataset = (await axios.get(new URL('api/3/action/package_show?id=' + publication.remoteFolder.id, catalogConfig.url).href, axiosOptions)).data.result
     // If the dataset no longer exists, we create it
-    if (!existingUdataDataset) {
+    if (!existingCkanDataset) {
       // await log.warning(`The remote dataset ${publication.remoteFolder.id} no longer exists, creating a new dataset`)
-      // const res = await axios.post(new URL('api/1/datasets/', catalogConfig.url).href, udataDataset, axiosOptions)
+      // const res = await axios.post(new URL('api/1/datasets/', catalogConfig.url).href, ckanDataset, axiosOptions)
       // publication.remoteFolder = {
       //   id: res.data.id,
       //   title: res.data.title,
@@ -185,16 +185,16 @@ const createOrUpdateDataset = async ({ catalogConfig, secrets, dataset, publicat
       // await log.info(`New dataset created with ID: ${res.data.id}`)
       // return publication
       throw new Error(`The remote dataset ${publication.remoteFolder.id} no longer exists.`)
-    } else if (existingUdataDataset.deleted) {
+    } else if (existingCkanDataset.deleted) {
       await log.warning(`The remote dataset ${publication.remoteFolder.id} was deleted, creating a new dataset with the same id`)
-      existingUdataDataset.deleted = null
+      existingCkanDataset.deleted = null
     }
 
     // preserving resource id so that URLs are not broken
-    if (existingUdataDataset.resources) {
+    if (existingCkanDataset.resources) {
       await log.info('Preserving existing resource identifiers')
-      for (const resource of udataDataset.resources) {
-        const matchingResource = existingUdataDataset.resources.find((r: { url?: string; title?: string; extras?: any }) => {
+      for (const resource of ckanDataset.resources) {
+        const matchingResource = existingCkanDataset.resources.find((r: { url?: string; title?: string; extras?: any }) => {
           if (!r.url || !resource.url) return false
 
           // Special case: for URLs ending with /convert or /raw, match only by suffix
@@ -226,14 +226,14 @@ const createOrUpdateDataset = async ({ catalogConfig, secrets, dataset, publicat
     }
 
     // If the existing dataset has a harvest, set it with new remote_url
-    if (existingUdataDataset.harvest) {
-      udataDataset.harvest = { remote_url: datasetUrl }
+    if (existingCkanDataset.harvest) {
+      ckanDataset.harvest = { remote_url: datasetUrl }
       await log.info(`Setting harvest with remote_url for dataset: ${datasetUrl}`)
     }
 
-    Object.assign(existingUdataDataset, udataDataset)
+    Object.assign(existingCkanDataset, ckanDataset)
     await log.info(`Updating remote dataset: ${publication.remoteFolder.id}`)
-    const res = await axios.post(new URL('api/3/action/package_patch?id=' + publication.remoteFolder.id, catalogConfig.url).href, existingUdataDataset, axiosOptions)
+    const res = await axios.post(new URL('api/3/action/package_patch?id=' + publication.remoteFolder.id, catalogConfig.url).href, existingCkanDataset, axiosOptions)
     publication.remoteFolder = {
       id: res.data.result.id,
       title: res.data.result.title,
@@ -241,8 +241,8 @@ const createOrUpdateDataset = async ({ catalogConfig, secrets, dataset, publicat
     }
     await log.info('Update successful')
   } else {
-    await log.step('Creating a new dataset on UData')
-    const res = await axios.post(new URL('api/3/action/package_create', catalogConfig.url).href, udataDataset, axiosOptions)
+    await log.step('Creating a new dataset on Ckan')
+    const res = await axios.post(new URL('api/3/action/package_create', catalogConfig.url).href, ckanDataset, axiosOptions)
     publication.remoteFolder = {
       id: res.data.result.id,
       title: res.data.result.title,
@@ -307,7 +307,7 @@ const deleteResource = async ({ catalogConfig, secrets, folderId, resourceId, lo
 }
 
 const createOrUpdateResource = async ({ catalogConfig, secrets, dataset, publication, publicationSite, log }: PublishDatasetContext<CkanConfig>): Promise<Publication> => {
-  await log.step('Preparing the resource for publication on UData')
+  await log.step('Preparing the resource for publication on Ckan')
 
   const axiosOptions = { headers: { Authorization: secrets.apiKey } }
 
@@ -326,27 +326,27 @@ const createOrUpdateResource = async ({ catalogConfig, secrets, dataset, publica
   if (!datasetId) throw new Error('Dataset ID is required to create or update a resource')
 
   await log.info(`Retrieving remote dataset ${datasetId}`)
-  const udataDataset = (await axios.get(new URL('api/3/action/package_show?id=' + datasetId, catalogConfig.url).href, axiosOptions)).data.result
-  if (!udataDataset) throw new Error('Remote dataset not found')
-  if (udataDataset.deleted) throw new Error('Remote dataset deleted')
+  const ckanDataset = (await axios.get(new URL('api/3/action/package_show?id=' + datasetId, catalogConfig.url).href, axiosOptions)).data.result
+  if (!ckanDataset) throw new Error('Remote dataset not found')
+  if (ckanDataset.deleted) throw new Error('Remote dataset deleted')
 
   await log.info(`Building resource for dataset ${dataset.title}`)
   const title = `${dataset.title} - Consultez les données`
   const description = `Consultez directement les données dans ${dataset.bbox ? 'une carte interactive' : 'un tableau'}.`
   const url = microTemplate(publicationSite.datasetUrlTemplate || '', { id: dataset.id, slug: dataset.slug })
 
-  const existingUdataResource = udataDataset.resources.find((r: { id: string }) => r.id === resourceId)
-  if (resourceId && existingUdataResource) { // Update it
+  const existingCkanResource = ckanDataset.resources.find((r: { id: string }) => r.id === resourceId)
+  if (resourceId && existingCkanResource) { // Update it
     await log.step(`Updating existing resource ${resourceId}`)
-    existingUdataResource.title = title
-    existingUdataResource.description = description
-    existingUdataResource.url = url
-    const res = await axios.post(new URL('api/3/action/package_show/resource_patch', catalogConfig.url).href, existingUdataResource, axiosOptions)
+    existingCkanResource.title = title
+    existingCkanResource.description = description
+    existingCkanResource.url = url
+    const res = await axios.post(new URL('api/3/action/package_show/resource_patch', catalogConfig.url).href, existingCkanResource, axiosOptions)
 
     publication.remoteResource = {
-      id: `${datasetId}:${existingUdataResource.id}`,
+      id: `${datasetId}:${existingCkanResource.id}`,
       title: res.data.title,
-      url: udataDataset.page
+      url: ckanDataset.page
     }
     await log.info(`Resource ${resourceId} updated successfully`)
   } else { // Add it
@@ -361,13 +361,13 @@ const createOrUpdateResource = async ({ catalogConfig, secrets, dataset, publica
       mimetype: 'text/html'
     }
 
-    await log.info(`Adding resource to dataset ${udataDataset.title || datasetId}`)
+    await log.info(`Adding resource to dataset ${ckanDataset.title || datasetId}`)
     const res = await axios.post(new URL('api/3/action/resource_create', catalogConfig.url).href, resource, axiosOptions)
 
     publication.remoteResource = {
       id: `${datasetId}:${res.data.result.id}`,
       title: res.data.result.title,
-      url: udataDataset.page
+      url: ckanDataset.page
     }
     await log.info(`Resource created with ID: ${res.data.id} in dataset ${datasetId}`)
   }

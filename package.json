@@ -1,6 +1,6 @@
 {
-  "name": "@data-fair/catalog-mock",
-  "description": "A simple mock plugin for the Data Fair catalogs service.",
+  "name": "@data-fair/catalog-udata",
+  "description": "A simple ckan plugin for the Data Fair catalogs service.",
   "version": "0.6.1",
   "main": "index.ts",
   "type": "module",
@@ -29,7 +29,8 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@data-fair/lib-validation": "^1.0.2"
+    "@data-fair/lib-validation": "^1.0.2",
+    "@koumoul/vjsf-markdown": "^0.3.3"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
