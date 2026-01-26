@@ -1,10 +1,10 @@
 import type CatalogPlugin from '@data-fair/types-catalogs'
-import { importConfigSchema, configSchema, assertConfigValid, type CkanConfig } from '#types'
+import { importConfigSchema, configSchema, assertConfigValid, type UDataConfig } from '#types'
 import { type CkanCapabilities, capabilities } from './lib/capabilities.ts'
 import importFiltersSchema from './lib/importFiltersSchema.ts'
 import i18n from './lib/i18n.ts'
 
-const plugin: CatalogPlugin<CkanConfig, CkanCapabilities> = {
+const plugin: CatalogPlugin<UDataConfig, CkanCapabilities> = {
   async prepare (context) {
     const prepare = (await import('./lib/prepare.ts')).default
     return prepare(context)

@@ -1,16 +1,16 @@
 import type { CatalogPlugin, Publication, PublishDatasetContext, DeletePublicationContext } from '@data-fair/types-catalogs'
-import type { CkanConfig } from '#types'
+import type { UDataConfig } from '#types'
 
 import axios from '@data-fair/lib-node/axios.js'
 import { microTemplate } from '@data-fair/lib-utils/micro-template.js'
 
-export const publishDataset = async (context: PublishDatasetContext<CkanConfig>): ReturnType<CatalogPlugin['publishDataset']> => {
+export const publishDataset = async (context: PublishDatasetContext<UDataConfig>): ReturnType<CatalogPlugin['publishDataset']> => {
   if (!context.secrets.apiKey) throw new Error('API key is required to publish a dataset')
   if (['createResource', 'replaceResource'].includes(context.publication.action)) return await createOrUpdateResource(context)
   else return await createOrUpdateDataset(context)
 }
 
-const createOrUpdateDataset = async ({ catalogConfig, secrets, dataset, publication, publicationSite, log }: PublishDatasetContext<CkanConfig>): Promise<Publication> => {
+const createOrUpdateDataset = async ({ catalogConfig, secrets, dataset, publication, publicationSite, log }: PublishDatasetContext<UDataConfig>): Promise<Publication> => {
   await log.step('Preparing the dataset for publication/update on UData')
   const axiosOptions = { headers: { Authorization: secrets.apiKey } }
 
@@ -255,13 +255,13 @@ const createOrUpdateDataset = async ({ catalogConfig, secrets, dataset, publicat
   return publication
 }
 
-export const deletePublication = async (context: DeletePublicationContext<CkanConfig>): ReturnType<CatalogPlugin['deletePublication']> => {
+export const deletePublication = async (context: DeletePublicationContext<UDataConfig>): ReturnType<CatalogPlugin['deletePublication']> => {
   if (!context.secrets.apiKey) throw new Error('API key is required to delete a publication')
   if (context.resourceId) return await deleteResource(context)
   else await deleteDataset(context)
 }
 
-const deleteDataset = async ({ catalogConfig, secrets, folderId, log }: DeletePublicationContext<CkanConfig>): Promise<void> => {
+const deleteDataset = async ({ catalogConfig, secrets, folderId, log }: DeletePublicationContext<UDataConfig>): Promise<void> => {
   try {
     await log.step(`Deleting dataset ${folderId}`)
     await axios.post(new URL('api/3/action/package_delete', catalogConfig.url).href, { id: folderId }, { headers: { Authorization: secrets.apiKey } })
@@ -273,7 +273,7 @@ const deleteDataset = async ({ catalogConfig, secrets, folderId, log }: DeletePu
   }
 }
 
-const deleteResource = async ({ catalogConfig, secrets, folderId, resourceId, log }: DeletePublicationContext<CkanConfig>): Promise<void> => {
+const deleteResource = async ({ catalogConfig, secrets, folderId, resourceId, log }: DeletePublicationContext<UDataConfig>): Promise<void> => {
   try {
     if (!resourceId) {
       throw new Error('Resource ID is required for deletion')
@@ -306,7 +306,7 @@ const deleteResource = async ({ catalogConfig, secrets, folderId, resourceId, lo
   }
 }
 
-const createOrUpdateResource = async ({ catalogConfig, secrets, dataset, publication, publicationSite, log }: PublishDatasetContext<CkanConfig>): Promise<Publication> => {
+const createOrUpdateResource = async ({ catalogConfig, secrets, dataset, publication, publicationSite, log }: PublishDatasetContext<UDataConfig>): Promise<Publication> => {
   await log.step('Preparing the resource for publication on UData')
 
   const axiosOptions = { headers: { Authorization: secrets.apiKey } }
