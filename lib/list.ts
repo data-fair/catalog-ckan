@@ -1,9 +1,9 @@
 import type { CatalogPlugin, ListContext, Folder } from '@data-fair/types-catalogs'
-import type { UDataConfig } from '#types'
+import type { CkanConfig } from '#types'
 import type { CkanCapabilities } from './capabilities.ts'
 import axios from '@data-fair/lib-node/axios.js'
 
-export const list = async ({ catalogConfig, secrets, params }: ListContext<UDataConfig, CkanCapabilities>): ReturnType<CatalogPlugin['list']> => {
+export const list = async ({ catalogConfig, secrets, params }: ListContext<CkanConfig, CkanCapabilities>): ReturnType<CatalogPlugin['list']> => {
   if (params.action && !secrets.apiKey) throw new Error('API key is required to list datasets for publication')
 
   const axiosOptions: Record<string, any> = { headers: {}, params: {} }

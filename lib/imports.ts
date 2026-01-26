@@ -1,8 +1,8 @@
 import axios from '@data-fair/lib-node/axios.js'
 import type { CatalogPlugin, GetResourceContext, Resource } from '@data-fair/types-catalogs'
-import type { UDataConfig } from '#types'
+import type { CkanConfig } from '#types'
 
-export const getResource = async ({ catalogConfig, secrets, importConfig, resourceId, tmpDir, log }: GetResourceContext<UDataConfig>): ReturnType<CatalogPlugin['getResource']> => {
+export const getResource = async ({ catalogConfig, secrets, importConfig, resourceId, tmpDir, log }: GetResourceContext<CkanConfig>): ReturnType<CatalogPlugin['getResource']> => {
   // Decode the composite ID (format: "datasetId:resourceId")
 
   const parts = resourceId.split(':')
