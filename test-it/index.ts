@@ -77,7 +77,7 @@ describe('catalog-ckan', () => {
       secrets,
       params: {
         showAll: 'true',
-        organization: '589596c188ee3877169b81a4' // Koumoul organization ID
+        organization: 'orga-1' // Koumoul organization ID
       }
     })
 
@@ -103,7 +103,7 @@ describe('catalog-ckan', () => {
           showAll: 'true',
           size: 1,
           page: 1,
-          organization: '589596c188ee3877169b81a4' // Koumoul organization ID in demo.data.gouv.fr
+          organization: 'orga-1' // Koumoul organization ID in demo.data.gouv.fr
         }
       })
 
