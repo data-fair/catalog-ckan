@@ -14,10 +14,11 @@ export default {
       },
       layout: {
         getItems: {
-          url: 'https://demo.ckan.org/api/3/action/organization_autocomplete',
+          url: 'https://demo.ckan.org/api/3/action/organization_list?all_fields=true',
           itemsResults: 'data.result',
           itemTitle: 'item.name',
           itemValue: 'item.id',
+          itemIcon: 'item.image_display_url',
           qSearchParam: 'q'
         },
         if: {

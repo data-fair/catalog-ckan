@@ -72,10 +72,11 @@
       },
       "layout": {
         "getItems": {
-          "url": "${parent.data.url}/api/3/action/organization_autocomplete?",
+          "url": "${parent.data.url}/api/3/action/organization_list?all_fields=true",
           "itemsResults": "data.result",
           "itemTitle": "item.title",
           "itemKey": "item.id",
+          "itemIcon": "item.image_display_url",
           "qSearchParam": "q"
         },
         "props": {

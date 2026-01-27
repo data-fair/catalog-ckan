@@ -16,9 +16,9 @@ dotenv.config()
 
 /** Catalog configuration for testing purposes. */
 const catalogConfig = {
-  url: process.env.CKAN_URL || 'http://192.168.1.16',
+  url: process.env.CKAN_URL || 'https://demo.ckan.org',
   apiKey: '**************************************************',
-  organization: { id: 'orga-1' }
+  organization: { id: '767bbb06-bb5c-4f7b-bd8b-35c4fbcad3b1' }
 }
 
 /** Secrets for accessing the catalog API, including the API key. */
@@ -77,7 +77,7 @@ describe('catalog-ckan', () => {
       secrets,
       params: {
         showAll: 'true',
-        organization: 'orga-1' // Koumoul organization ID
+        organization: '767bbb06-bb5c-4f7b-bd8b-35c4fbcad3b1' // test organization ID
       }
     })
 
@@ -103,7 +103,7 @@ describe('catalog-ckan', () => {
           showAll: 'true',
           size: 1,
           page: 1,
-          organization: 'orga-1' // Koumoul organization ID in demo.data.gouv.fr
+          organization: '767bbb06-bb5c-4f7b-bd8b-35c4fbcad3b1' // test organization ID in local ckan
         }
       })
 
@@ -181,8 +181,8 @@ describe('catalog-ckan', () => {
     }
     const publicationSite = {
       title: 'Test Site',
-      url: 'http://192.168.1.16',
-      datasetUrlTemplate: 'http://192.168.1.16/data-fair/{id}'
+      url: 'https://demo.ckan.org',
+      datasetUrlTemplate: 'https://demo.ckan.org/data-fair/{id}'
     }
 
     const result = await catalogPlugin.publishDataset({
@@ -225,8 +225,8 @@ describe('catalog-ckan', () => {
       }
       const publicationSite = {
         title: 'Test Site',
-        url: 'http://192.168.1.16',
-        datasetUrlTemplate: 'http://192.168.1.16/data-fair/{id}'
+        url: 'https://demo.ckan.org',
+        datasetUrlTemplate: 'https://demo.ckan.org/data-fair/{id}'
       }
 
       const result = await catalogPlugin.publishDataset({
@@ -265,8 +265,8 @@ describe('catalog-ckan', () => {
     let result: Publication
     const publicationSite = {
       title: 'Test Site',
-      url: 'http://192.168.1.16',
-      datasetUrlTemplate: 'http://192.168.1.16/data-fair/{id}'
+      url: 'https://demo.ckan.org',
+      datasetUrlTemplate: 'https://demo.ckan.org/data-fair/{id}'
     }
     it('Dataset Resource', async () => {
       const dataset = {

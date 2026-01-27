@@ -57,7 +57,7 @@ export const list = async ({ catalogConfig, secrets, params }: ListContext<CkanC
       urlParams.append('start', String((params.page - 1) * params.size))
       urlParams.append('rows', String(params.size))
     }
-    if (params.organization) urlParams.append('fq', `organization:${params.organization}`)
+    if (params.organization) urlParams.append('fq', `owner_org:${params.organization}`)
     const result = (await axios.get(new URL(`api/action/package_search?${urlParams.toString()}`, catalogConfig.url).href, axiosOptions)).data.result
     datasets = result.results
     count = result.count
