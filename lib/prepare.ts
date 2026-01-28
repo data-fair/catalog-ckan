@@ -29,10 +29,6 @@ export default async ({ catalogConfig, capabilities, secrets }: PrepareContext<C
     capabilities = capabilities.filter(c => !publicationCapabilities.includes(c as any))
   }
 
-  // Compatibility: remove old 'publication' capability and add 'requiresPublicationSite'
-  capabilities = capabilities.filter(c => c !== 'publication' as any)
-  if (!capabilities.includes('requiresPublicationSite')) capabilities.push('requiresPublicationSite')
-
   // Check if the APIkey is valid by getting the user info
   if (secrets?.apiKey) {
     let user

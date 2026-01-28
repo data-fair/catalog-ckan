@@ -1,3 +1,4 @@
+/* eslint-disable no-template-curly-in-string */
 export default {
   type: 'object',
   additionalProperties: false,
@@ -14,7 +15,7 @@ export default {
       },
       layout: {
         getItems: {
-          url: 'https://demo.ckan.org/api/3/action/organization_list?all_fields=true',
+          url: '${context.catalogConfig.url}/api/3/action/organization_list?all_fields=true',
           itemsResults: 'data.result',
           itemTitle: 'item.name',
           itemValue: 'item.id',

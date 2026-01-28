@@ -82,7 +82,7 @@ export const getResource = async ({ catalogConfig, secrets, importConfig, resour
     license,
     keywords: ckanResource.tags,
     mimeType: ckanResource.mimetype,
-    origin: dataset.page,
+    origin: `${catalogConfig.url}/dataset/${dataset.name}`,
     size: ckanResource.size,
   } as Resource
 }

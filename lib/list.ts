@@ -9,9 +9,8 @@ export const list = async ({ catalogConfig, secrets, params }: ListContext<CkanC
   const axiosOptions: Record<string, any> = { headers: {}, params: {} }
   if (secrets.apiKey) axiosOptions.headers.Authorization = secrets.apiKey
   if (params.q) axiosOptions.params.q = params.q
-
   if (params.currentFolderId) {
-    const dataset = (await axios.get(new URL(`api/action/package_show?id=${params.currentFolderId}`, catalogConfig.url).href, axiosOptions)).data.result
+    const dataset = (await axios.get(new URL(`api/3/action/package_show?id=${params.currentFolderId}`, catalogConfig.url).href, axiosOptions)).data.result
 
     type ResourceResponse = Awaited<ReturnType<CatalogPlugin['list']>>['results'][number]
 
@@ -24,7 +23,7 @@ export const list = async ({ catalogConfig, secrets, params }: ListContext<CkanC
           type: 'resource',
           description: ckanResource.description,
           format: ckanResource.format || 'unknown',
-          origin: 0,
+          origin: `${catalogConfig.url}/dataset/${dataset.name}`,
           mimeType: ckanResource.mimetype,
           size: ckanResource.size,
           updatedAt: ckanResource.metadata_modified,
@@ -47,7 +46,6 @@ export const list = async ({ catalogConfig, secrets, params }: ListContext<CkanC
       path,
     }
   }
-
   let datasets
   let count
   const urlParams = new URLSearchParams()
@@ -58,11 +56,12 @@ export const list = async ({ catalogConfig, secrets, params }: ListContext<CkanC
       urlParams.append('rows', String(params.size))
     }
     if (params.organization) urlParams.append('fq', `owner_org:${params.organization}`)
-    const result = (await axios.get(new URL(`api/action/package_search?${urlParams.toString()}`, catalogConfig.url).href, axiosOptions)).data.result
+    const result = (await axios.get(new URL(`api/3/action/package_search?${urlParams.toString()}`, catalogConfig.url).href, axiosOptions)).data.result
     datasets = result.results
     count = result.count
   } else {
-    datasets = (await axios.get(new URL('api/action/current_package_list_with_resources', catalogConfig.url).href, axiosOptions)).data.result
+    datasets = (await axios.get(new URL('api/3/action/current_package_list_with_resources?limit=10', catalogConfig.url).href, axiosOptions)).data.result
+
     if (params.action !== 'replaceFolder') datasets = datasets.filter((d: any) => d.state !== 'deleted')
 
     // Filter out datasets with "Consultez les données" resources for create/replace resource actions

@@ -35,7 +35,6 @@ describe('catalog-ckan', () => {
       secrets,
       params: { showAll: 'true' }
     })
-
     assert.ok(res.count >= 0, 'Expected 0 or more items in the root folder')
     assert.ok(res.results.length >= 0)
     if (res.results.length > 0) {

@@ -4,11 +4,11 @@ const i18n: Metadata['i18n'] = {
   en: {
     description: 'Import / publish datasets from / to a Ckan catalog.',
     actionLabels: {
-      // createFolderInRoot: 'Create folder in root',
+      createFolderInRoot: 'Create dataset',
       // createFolder: 'Create folder',
-      createResource: 'Create file', // Default : Create resource
-      // replaceFolder: 'Replace folder',
-      replaceResource: 'Replace file' // Default : Replace resource
+      createResource: 'Create resource', // Default : Create resource
+      replaceFolder: 'Replace dataset',
+      replaceResource: 'Replace resource' // Default : Replace resource
     },
     actionButtons: {
       // createFolderInRoot: 'Create publication',
@@ -27,18 +27,18 @@ const i18n: Metadata['i18n'] = {
   fr: {
     description: 'Importez / publiez des jeux de données depuis / vers un catalogue Ckan.',
     actionLabels: {
-      // createFolderInRoot: 'Créer un dossier à la racine',
+      createFolderInRoot: 'Créer un jeu de donnée',
       // createFolder: 'Créer un dossier',
-      createResource: 'Créer un fichier', // Défaut : Créer une ressource
-      // replaceFolder: 'Écraser un dossier',
-      replaceResource: 'Remplacer un fichier' // Défaut : Écraser une ressource
+      createResource: 'Créer une ressource', // Défaut : Créer une ressource
+      replaceFolder: 'Écraser un jeu de donnée',
+      replaceResource: 'Remplacer une ressource' // Défaut : Écraser une ressource
     },
     actionButtons: {
       // createFolderInRoot: 'Créer la publication',
       // createFolder: 'Créer la publication ici',
-      createResource: 'Créer le fichier ici', // Défaut : Créer la publication ici
+      createResource: 'Créer la ressource ici', // Défaut : Créer la publication ici
       // replaceFolder: 'Écraser ce dossier',
-      replaceResource: 'Remplacer le fichier' // Défaut : Écraser cette ressource
+      replaceResource: 'Remplacer la ressource' // Défaut : Écraser cette ressource
     },
     stepTitles: {
       // createFolder: 'Sélection du dossier de destination',
