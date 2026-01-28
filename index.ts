@@ -32,7 +32,7 @@ const plugin: CatalogPlugin<CkanConfig, CkanCapabilities> = {
 
   metadata: {
     title: 'Ckan',
-    description: 'Importez / publiez des jeux de données depuis / vers un catalogue Ckan.',
+    thumbnailPath: './lib/resources/thumbnail.svg',
     i18n,
     capabilities
   },

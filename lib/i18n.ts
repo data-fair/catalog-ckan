@@ -2,7 +2,7 @@ import type { Metadata } from '@data-fair/types-catalogs'
 
 const i18n: Metadata['i18n'] = {
   en: {
-    description: 'This catalog allows testing the service by simulating a folder and file structure.',
+    description: 'Import / publish datasets from / to a Ckan catalog.',
     actionLabels: {
       // createFolderInRoot: 'Create folder in root',
       // createFolder: 'Create folder',
@@ -25,7 +25,7 @@ const i18n: Metadata['i18n'] = {
     }
   },
   fr: {
-    description: 'Ce catalogue permet de tester le service en simulant une arborescence de dossiers et de fichiers.',
+    description: 'Importez / publiez des jeux de données depuis / vers un catalogue Ckan.',
     actionLabels: {
       // createFolderInRoot: 'Créer un dossier à la racine',
       // createFolder: 'Créer un dossier',
