@@ -75,7 +75,7 @@ export const getResource = async ({ catalogConfig, secrets, importConfig, resour
   return {
     id: resourceId,
     title: importConfig.useDatasetTitle ? dataset.name : ckanResource.name,
-    description: importConfig.useDatasetDescription ? dataset.description : ckanResource.description,
+    description: importConfig.useDatasetDescription ? dataset.notes : ckanResource.description,
     filePath,
     format: ckanResource.format,
     frequency: ckanResource.frequency,
