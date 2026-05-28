@@ -32,7 +32,6 @@ const plugin: CatalogPlugin<CkanConfig, CkanCapabilities> = {
 
   metadata: {
     title: 'Ckan',
-    thumbnailPath: './lib/resources/thumbnail.svg',
     i18n,
     capabilities
   },

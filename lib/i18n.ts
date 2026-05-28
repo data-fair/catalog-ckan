@@ -2,7 +2,6 @@ import type { Metadata } from '@data-fair/types-catalogs'
 
 const i18n: Metadata['i18n'] = {
   en: {
-    description: 'Import / publish datasets from / to a Ckan catalog.',
     actionLabels: {
       createFolderInRoot: 'Create dataset',
       // createFolder: 'Create folder',
@@ -25,7 +24,6 @@ const i18n: Metadata['i18n'] = {
     }
   },
   fr: {
-    description: 'Importez / publiez des jeux de données depuis / vers un catalogue Ckan.',
     actionLabels: {
       createFolderInRoot: 'Créer un jeu de donnée',
       // createFolder: 'Créer un dossier',
