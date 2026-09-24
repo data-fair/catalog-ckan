@@ -57,12 +57,12 @@ export const getResource = async ({ catalogConfig, secrets, importConfig, resour
     writeStream.on('finish', () => resolve(filePath))
     writeStream.on('error', (error) => reject(error))
   })
-  await log.info(`Resource ${ckanResource.title} downloaded successfully!`)
+  await log.info(`Resource ${ckanResource.title || ckanResource.name} downloaded successfully!`)
 
   await log.step('Preparing the dataset')
 
-  const title = importConfig.useDatasetTitle ? dataset.title : ckanResource.title
-  const description = importConfig.useDatasetDescription ? dataset.description : ckanResource.description
+  const title = importConfig.useDatasetTitle ? dataset.title : (ckanResource.title || ckanResource.name)
+  const description = importConfig.useDatasetDescription ? (dataset.notes || dataset.description) : ckanResource.description
   await log.info(`Dataset title from ${importConfig.useDatasetTitle ? 'remote dataset' : 'remote resource'}: ${title}`)
   await log.info(`Dataset description from ${importConfig.useDatasetDescription ? 'remote dataset' : 'remote resource'}: ${description?.substring(0, 100)}${description?.length > 100 ? '...' : ''}`)
 
@@ -74,8 +74,8 @@ export const getResource = async ({ catalogConfig, secrets, importConfig, resour
 
   return {
     id: resourceId,
-    title: importConfig.useDatasetTitle ? dataset.name : ckanResource.name,
-    description: importConfig.useDatasetDescription ? dataset.notes : ckanResource.description,
+    title,
+    description,
     filePath,
     format: ckanResource.format,
     frequency: ckanResource.frequency,
